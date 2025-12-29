@@ -588,7 +588,7 @@ class TodoApp(tk.Tk):
     def _on_tree_click(self, event: tk.Event) -> None:
         """Handler de clique no Treeview.
 
-        Se clicar na coluna de delete ("×"), remove a tarefa imediatamente.
+        Se clicar na coluna de delete ("×"), pede confirmação antes de remover.
         """
         region = self.tree.identify_region(event.x, event.y)
         if region == "cell":
@@ -597,9 +597,19 @@ class TodoApp(tk.Tk):
                 item = self.tree.identify_row(event.y)
                 if item:
                     task_id = int(item)
-                    self.tasks = [t for t in self.tasks if t["id"] != task_id]
-                    save_tasks(self.tasks)
-                    self._refresh_list()
+                    # Find the task to get its text
+                    task_text = ""
+                    for task in self.tasks:
+                        if task["id"] == task_id:
+                            task_text = task.get("task", "").strip()
+                            break
+                    
+                    # Ask for confirmation
+                    confirm_msg = f"Deletar esta tarefa?\n\n{task_text}"
+                    if messagebox.askyesno("Confirmar Deleção", confirm_msg):
+                        self.tasks = [t for t in self.tasks if t["id"] != task_id]
+                        save_tasks(self.tasks)
+                        self._refresh_list()
 
     def _selection_ids(self) -> list[int]:
         """Retorna os ids selecionados no Treeview como `int`."""
@@ -714,13 +724,29 @@ class TodoApp(tk.Tk):
         self._refresh_list()
 
     def remove_selected(self) -> None:
-        """Remove todas as tarefas selecionadas (com persistência imediata)."""
+        """Remove todas as tarefas selecionadas após confirmação (com persistência imediata)."""
         ids = set(self._selection_ids())
         if not ids:
             return
-        self.tasks = [t for t in self.tasks if t["id"] not in ids]
-        save_tasks(self.tasks)
-        self._refresh_list()
+        
+        # Build list of tasks to be deleted for confirmation
+        tasks_to_delete = []
+        for task in self.tasks:
+            if task["id"] in ids:
+                tasks_to_delete.append(task.get("task", "").strip())
+        
+        # Ask for confirmation
+        count = len(tasks_to_delete)
+        if count == 1:
+            confirm_msg = f"Deletar esta tarefa?\n\n{tasks_to_delete[0]}"
+        else:
+            task_list = "\n".join([f"• {t}" for t in tasks_to_delete])
+            confirm_msg = f"Deletar {count} tarefas?\n\n{task_list}"
+        
+        if messagebox.askyesno("Confirmar Deleção", confirm_msg):
+            self.tasks = [t for t in self.tasks if t["id"] not in ids]
+            save_tasks(self.tasks)
+            self._refresh_list()
 
 
 if __name__ == "__main__":

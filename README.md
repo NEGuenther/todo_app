@@ -28,6 +28,9 @@ Um gerenciador simples de tarefas (todo list) com interface gráfica em Tkinter 
   - Filtro por status (Todos, Pendentes, Em andamento, Concluídas)
   - Filtro por prioridade (Todas, Alta, Média, Baixa)
   - Mostra quantas tarefas correspondem aos filtros
+- ⚠️ **Confirmação ao Deletar** - Dialog de confirmação antes de remover:
+  - Mostra o texto completo da tarefa
+  - Suporta deleção em lote com confirmação
 
 ## Como usar
 
