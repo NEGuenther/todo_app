@@ -17,6 +17,12 @@ Um gerenciador simples de tarefas (todo list) com interface gráfica em Tkinter 
 - 🗑️ **Remover tarefas** - Delete tarefas clicando no "×" ou usando o botão Remover
 - 💾 **Persistência** - Todas as tarefas são automaticamente salvas em `tasks.json`
 - 📊 **Ordenação automática** - Tarefas são ordenadas por prioridade (Alta → Média → Baixa)
+- 📈 **Dashboard de Estatísticas** - Painel em tempo real mostrando:
+  - Total de tarefas
+  - Tarefas pendentes
+  - Tarefas em andamento
+  - Tarefas concluídas
+  - Porcentagem de conclusão
 
 ## Como usar
 

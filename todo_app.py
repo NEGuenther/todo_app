@@ -44,6 +44,32 @@ class Task(TypedDict, total=False):
     priority: Literal["low", "medium", "high"]
 
 
+def calculate_stats(tasks: list[Task]) -> dict[str, int | float]:
+    """Calcula estatísticas das tarefas.
+    
+    Retorna dicionário com:
+    - total: número total de tarefas
+    - pending: número de tarefas pendentes
+    - in_progress: número de tarefas em andamento
+    - done: número de tarefas concluídas
+    - completion_percent: porcentagem de conclusão (0-100)
+    """
+    total = len(tasks)
+    pending = sum(1 for t in tasks if t.get("status") == "pending")
+    in_progress = sum(1 for t in tasks if t.get("status") == "in_progress")
+    done = sum(1 for t in tasks if t.get("status") == "done")
+    
+    completion_percent = (done / total * 100) if total > 0 else 0
+    
+    return {
+        "total": total,
+        "pending": pending,
+        "in_progress": in_progress,
+        "done": done,
+        "completion_percent": completion_percent,
+    }
+
+
 def load_tasks() -> list[Task]:
     """Carrega tarefas do arquivo JSON.
 
@@ -74,7 +100,7 @@ class TodoApp(tk.Tk):
         """Inicializa janela, tema, carrega tarefas, constrói UI e renderiza lista."""
         super().__init__()
         self.title("Minhas Tarefas")
-        self.geometry("760x640")
+        self.geometry("900x750")
         self.resizable(False, False)
 
         self._apply_theme()
@@ -92,6 +118,7 @@ class TodoApp(tk.Tk):
 
         Compatibilidade:
         - Se não houver `status`, deriva de `done` e garante ambos consistentes.
+        - Se não houver `priority`, define como "medium".
         - Persiste automaticamente se houver mudanças.
         """
         updated = False
@@ -102,6 +129,12 @@ class TodoApp(tk.Tk):
                 task["status"] = status
                 task["done"] = status == "done"
                 updated = True
+            
+            # Add priority if missing
+            if "priority" not in task:
+                task["priority"] = "medium"
+                updated = True
+        
         if updated:
             save_tasks(self.tasks)
 
@@ -325,6 +358,32 @@ class TodoApp(tk.Tk):
         self.preview.config(state="disabled")
         self.preview.pack(fill=tk.X, pady=(8, 12))
 
+        # Dashboard de Estatísticas
+        dashboard = ttk.Frame(main)
+        dashboard.pack(fill=tk.X, pady=(0, 12))
+        
+        ttk.Label(dashboard, text="Estatísticas:", font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT, padx=(0, 16))
+        
+        # Total de tarefas
+        self.label_total = ttk.Label(dashboard, text="Total: 0", foreground=palette["fg_muted"])
+        self.label_total.pack(side=tk.LEFT, padx=8)
+        
+        # Pendentes
+        self.label_pending = ttk.Label(dashboard, text="Pendentes: 0", foreground=palette["status_pending_fg"])
+        self.label_pending.pack(side=tk.LEFT, padx=8)
+        
+        # Em andamento
+        self.label_progress = ttk.Label(dashboard, text="Em andamento: 0", foreground=palette["status_progress_fg"])
+        self.label_progress.pack(side=tk.LEFT, padx=8)
+        
+        # Concluídas
+        self.label_done = ttk.Label(dashboard, text="Concluídas: 0", foreground=palette["status_done_fg"])
+        self.label_done.pack(side=tk.LEFT, padx=8)
+        
+        # Porcentagem de conclusão
+        self.label_completion = ttk.Label(dashboard, text="Progresso: 0%", font=("Segoe UI", 10, "bold"), foreground=palette["accent"])
+        self.label_completion.pack(side=tk.LEFT, padx=8)
+
         # Lista de tarefas
         columns = ("task", "priority", "status", "delete")
         tree_frame = ttk.Frame(main)
@@ -430,6 +489,9 @@ class TodoApp(tk.Tk):
 
         # Update preview text with current selection
         self._update_preview()
+        
+        # Update dashboard statistics
+        self._update_dashboard()
 
     def _on_tree_click(self, event: tk.Event) -> None:
         """Handler de clique no Treeview.
@@ -466,6 +528,19 @@ class TodoApp(tk.Tk):
         self.preview.delete("1.0", tk.END)
         if text:
             self.preview.insert("1.0", text)
+        self.preview.config(state="disabled")
+
+    def _update_dashboard(self) -> None:
+        """Atualiza os labels de estatísticas do dashboard."""
+        stats = calculate_stats(self.tasks)
+        
+        self.label_total.config(text=f"Total: {stats['total']}")
+        self.label_pending.config(text=f"Pendentes: {stats['pending']}")
+        self.label_progress.config(text=f"Em andamento: {stats['in_progress']}")
+        self.label_done.config(text=f"Concluídas: {stats['done']}")
+        
+        completion_pct = int(stats['completion_percent'])
+        self.label_completion.config(text=f"Progresso: {completion_pct}%")
         self.preview.config(state="disabled")
 
     def add_task(self) -> None:
