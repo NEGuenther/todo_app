@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "task": "Validar com Samantha sobre itens cadastrados em laranja na planilha",
+    "done": true,
+    "status": "done"
+  },
+  {
+    "id": 2,
+    "task": "Verificar sobre demanda com o Thiago no Netzsch Selector, chamar ele para explicações",
+    "done": true,
+    "status": "done"
+  },
+  {
+    "id": 3,
+    "task": "Validar cadastros de itens estatores no SAP",
+    "done": true,
+    "status": "done"
+  },
+  {
+    "id": 5,
+    "task": "Vericar com Eduardo sobre o ultimo item da lista que ele passou via email",
+    "done": true,
+    "status": "done"
+  },
+  {
+    "id": 6,
+    "task": "Medres 2, na tela Fluids in contact with elastomer, ao ir preenchendo o campo e dando TAB para pular ao proximo, acada TAB ocorre o salvamento da informação na base de dados",
+    "done": false,
+    "status": "in_progress"
+  }
+]
