@@ -28,10 +28,10 @@
     "priority": "medium"
   },
   {
-    "id": 6,
+    "id": 8,
     "task": "Medres 2, na tela Fluids in contact with elastomer, ao ir preenchendo o campo e dando TAB para pular ao proximo, acada TAB ocorre o salvamento da informação na base de dados",
     "done": false,
-    "status": "in_progress",
-    "priority": "medium"
+    "status": "pending",
+    "priority": "low"
   }
 ]

@@ -68,6 +68,17 @@ As tarefas são salvas em `tasks.json` com o seguinte formato:
 - **priority**: Um de `low`, `medium` ou `high`
 - **done**: Sincronizado com `status` (true se status == 'done')
 
+## Design Visual
+
+A aplicação utiliza:
+- **Fonte unificada**: Segoe UI em todo o aplicativo
+- **Pesos de fonte**:
+  - Normal: 10pt para conteúdo regular
+  - Bold: 10pt para labels
+  - Bold Large: 11pt para títulos e destaque
+- **Tema escuro**: Paleta visual elegante com contraste adequado
+- **Cores semânticas**: Cada status e prioridade possui cores características para facilitar a identificação visual rápida
+
 ### Campos
 
 - `id` (int): Identificador único e estável da tarefa

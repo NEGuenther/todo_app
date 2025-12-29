@@ -99,7 +99,7 @@ class TodoApp(tk.Tk):
     def __init__(self):
         """Inicializa janela, tema, carrega tarefas, constrói UI e renderiza lista."""
         super().__init__()
-        self.title("Minhas Tarefas")
+        self.title("📝 Minhas Tarefas")
         self.geometry("900x750")
         self.resizable(False, False)
 
@@ -164,7 +164,7 @@ class TodoApp(tk.Tk):
                 padx/pady: Espaçamento interno.
                 base_bg: Cor de fundo do Canvas (se omitida, usa background da janela).
             """
-            self.font = tkfont.Font(family="Segoe UI", size=10, weight="bold")
+            self.font = tkfont.Font(family="Segoe UI", size=11, weight="bold")
             text_width = self.font.measure(text)
             text_height = self.font.metrics("linespace")
             width = text_width + padx * 2
@@ -269,12 +269,16 @@ class TodoApp(tk.Tk):
             "priority_low_fg": "#374151",
         }
 
-        # General styling
+        # General styling - Unified font system
+        font_base = ("Segoe UI", 10)
+        font_bold = ("Segoe UI", 10, "bold")
+        font_bold_lg = ("Segoe UI", 11, "bold")
+        
         self.style.configure("TFrame", background=surface)
-        self.style.configure("TLabel", background=surface, foreground=fg, font=("Segoe UI", 10))
+        self.style.configure("TLabel", background=surface, foreground=fg, font=font_base)
         self.style.configure("TEntry", fieldbackground=card, foreground=fg, bordercolor=border, 
-                           insertcolor=cursor)
-        self.style.configure("TButton", background=accent, foreground="white", font=("Segoe UI", 10, "bold"), padding=8)
+                           insertcolor=cursor, font=font_base)
+        self.style.configure("TButton", background=accent, foreground="white", font=font_bold_lg, padding=8)
         self.style.map("TButton",
                        background=[("active", accent_hover)],
                        relief=[("pressed", "sunken"), ("!pressed", "flat")])
@@ -286,11 +290,11 @@ class TodoApp(tk.Tk):
                              foreground=fg,
                              bordercolor=border,
                              rowheight=28,
-                             font=("Segoe UI", 10))
+                             font=font_base)
         self.style.configure("Treeview.Heading",
                              background=surface,
                              foreground=fg,
-                             font=("Segoe UI", 10, "bold"))
+                             font=font_bold_lg)
         self.style.map("Treeview",
                        background=[("selected", accent)],
                        foreground=[("selected", "white")])
@@ -335,13 +339,13 @@ class TodoApp(tk.Tk):
         TodoButton = self.RoundedButton
         palette = self.colors
         
-        ttk.Label(top, text="Nova tarefa:").pack(side=tk.LEFT)
-        self.entry = ttk.Entry(top)
+        ttk.Label(top, text="Nova tarefa:", font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT)
+        self.entry = ttk.Entry(top, font=("Segoe UI", 10))
         self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=8)
         self.entry.bind("<Return>", lambda _: self.add_task())
         
         # Priority dropdown
-        ttk.Label(top, text="Prioridade:").pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Label(top, text="Prioridade:", font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT, padx=(8, 0))
         self.priority_var = tk.StringVar(value="medium")
         priority_combo = ttk.Combobox(top, textvariable=self.priority_var, 
                                        values=["low", "medium", "high"],
@@ -362,26 +366,26 @@ class TodoApp(tk.Tk):
         dashboard = ttk.Frame(main)
         dashboard.pack(fill=tk.X, pady=(0, 12))
         
-        ttk.Label(dashboard, text="Estatísticas:", font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT, padx=(0, 16))
+        ttk.Label(dashboard, text="📊 Estatísticas:", font=("Segoe UI", 11, "bold"), foreground=palette["fg"]).pack(side=tk.LEFT, padx=(0, 16))
         
         # Total de tarefas
-        self.label_total = ttk.Label(dashboard, text="Total: 0", foreground=palette["fg_muted"])
+        self.label_total = ttk.Label(dashboard, text="Total: 0", font=("Segoe UI", 10, "bold"), foreground=palette["fg_muted"])
         self.label_total.pack(side=tk.LEFT, padx=8)
         
         # Pendentes
-        self.label_pending = ttk.Label(dashboard, text="Pendentes: 0", foreground=palette["status_pending_fg"])
+        self.label_pending = ttk.Label(dashboard, text="Pendentes: 0", font=("Segoe UI", 10, "bold"), foreground=palette["status_pending_fg"])
         self.label_pending.pack(side=tk.LEFT, padx=8)
         
         # Em andamento
-        self.label_progress = ttk.Label(dashboard, text="Em andamento: 0", foreground=palette["status_progress_fg"])
+        self.label_progress = ttk.Label(dashboard, text="Em andamento: 0", font=("Segoe UI", 10, "bold"), foreground=palette["status_progress_fg"])
         self.label_progress.pack(side=tk.LEFT, padx=8)
         
         # Concluídas
-        self.label_done = ttk.Label(dashboard, text="Concluídas: 0", foreground=palette["status_done_fg"])
+        self.label_done = ttk.Label(dashboard, text="Concluídas: 0", font=("Segoe UI", 10, "bold"), foreground=palette["status_done_fg"])
         self.label_done.pack(side=tk.LEFT, padx=8)
         
         # Porcentagem de conclusão
-        self.label_completion = ttk.Label(dashboard, text="Progresso: 0%", font=("Segoe UI", 10, "bold"), foreground=palette["accent"])
+        self.label_completion = ttk.Label(dashboard, text="Progresso: 0%", font=("Segoe UI", 11, "bold"), foreground=palette["accent"])
         self.label_completion.pack(side=tk.LEFT, padx=8)
 
         # Lista de tarefas
