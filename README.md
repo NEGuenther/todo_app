@@ -6,12 +6,17 @@ Um gerenciador simples de tarefas (todo list) com interface gráfica em Tkinter 
 
 - ✅ **Adicionar tarefas** - Use o campo de texto e pressione Enter para adicionar uma nova tarefa
 - 📋 **Listar tarefas** - Visualize todas as tarefas em uma tabela com seus status
+- ⭐ **Prioridades** - Defina níveis de prioridade para cada tarefa:
+  - `low` (Baixa) - cinza
+  - `medium` (Média) - amarelo
+  - `high` (Alta) - vermelho
 - 🔄 **Gerenciar status** - Cicle entre os status de uma tarefa:
   - `pending` (Pendente)
   - `in_progress` (Em andamento)
   - `done` (Feita)
 - 🗑️ **Remover tarefas** - Delete tarefas clicando no "×" ou usando o botão Remover
 - 💾 **Persistência** - Todas as tarefas são automaticamente salvas em `tasks.json`
+- 📊 **Ordenação automática** - Tarefas são ordenadas por prioridade (Alta → Média → Baixa)
 
 ## Como usar
 
@@ -37,16 +42,25 @@ As tarefas são salvas em `tasks.json` com o seguinte formato:
     "id": 1,
     "task": "Descrição da tarefa",
     "status": "pending",
+    "priority": "high",
     "done": false
   },
   {
     "id": 2,
     "task": "Outra tarefa",
     "status": "done",
+    "priority": "medium",
     "done": true
   }
 ]
 ```
+
+### Campos explicados:
+- **id**: Identificador único e estável da tarefa
+- **task**: Texto descritivo da tarefa
+- **status**: Um de `pending`, `in_progress` ou `done`
+- **priority**: Um de `low`, `medium` ou `high`
+- **done**: Sincronizado com `status` (true se status == 'done')
 
 ### Campos
 

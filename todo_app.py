@@ -41,6 +41,7 @@ class Task(TypedDict, total=False):
     task: str
     status: TaskStatus
     done: bool
+    priority: Literal["low", "medium", "high"]
 
 
 def load_tasks() -> list[Task]:
@@ -227,6 +228,12 @@ class TodoApp(tk.Tk):
             "status_progress_fg": "#1d4ed8",
             "status_done_bg": "#bbf7d0",      # light green
             "status_done_fg": "#6b7280",      # fogged text gray
+            "priority_high_bg": "#fecaca",    # light red
+            "priority_high_fg": "#7f1d1d",
+            "priority_medium_bg": "#fcd34d",  # light yellow
+            "priority_medium_fg": "#78350f",
+            "priority_low_bg": "#d1d5db",     # light gray
+            "priority_low_fg": "#374151",
         }
 
         # General styling
@@ -266,6 +273,14 @@ class TodoApp(tk.Tk):
         self.style.configure("Treeview.Done", background=self.colors["status_done_bg"],
                              foreground=self.colors["status_done_fg"])
 
+        # Tag styles for priorities
+        self.style.configure("Treeview.PriorityHigh", background=self.colors["priority_high_bg"],
+                             foreground=self.colors["priority_high_fg"])
+        self.style.configure("Treeview.PriorityMedium", background=self.colors["priority_medium_bg"],
+                             foreground=self.colors["priority_medium_fg"])
+        self.style.configure("Treeview.PriorityLow", background=self.colors["priority_low_bg"],
+                             foreground=self.colors["priority_low_fg"])
+
         # Scrollbar styling
         self.style.configure("Vertical.TScrollbar",
                              background=surface,
@@ -291,6 +306,15 @@ class TodoApp(tk.Tk):
         self.entry = ttk.Entry(top)
         self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=8)
         self.entry.bind("<Return>", lambda _: self.add_task())
+        
+        # Priority dropdown
+        ttk.Label(top, text="Prioridade:").pack(side=tk.LEFT, padx=(8, 0))
+        self.priority_var = tk.StringVar(value="medium")
+        priority_combo = ttk.Combobox(top, textvariable=self.priority_var, 
+                                       values=["low", "medium", "high"],
+                                       state="readonly", width=8)
+        priority_combo.pack(side=tk.LEFT, padx=4)
+        
         TodoButton(top, text="Adicionar", command=self.add_task, bg=palette["accent"], fg="white",
                    hover_bg=palette["accent_hover"], active_bg=palette["accent_active"],
                    base_bg=palette["surface"]).pack(side=tk.LEFT, padx=(6, 0))
@@ -302,16 +326,18 @@ class TodoApp(tk.Tk):
         self.preview.pack(fill=tk.X, pady=(8, 12))
 
         # Lista de tarefas
-        columns = ("task", "status", "delete")
+        columns = ("task", "priority", "status", "delete")
         tree_frame = ttk.Frame(main)
         tree_frame.pack(fill=tk.BOTH, expand=True)
 
         self.tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=18)
         self.tree.heading("task", text="Tarefa")
+        self.tree.heading("priority", text="Prioridade")
         self.tree.heading("status", text="Status")
         self.tree.heading("delete", text="")
-        self.tree.column("task", width=460, anchor=tk.W, stretch=True)
-        self.tree.column("status", width=120, anchor=tk.CENTER, stretch=False)
+        self.tree.column("task", width=380, anchor=tk.W, stretch=True)
+        self.tree.column("priority", width=100, anchor=tk.CENTER, stretch=False)
+        self.tree.column("status", width=100, anchor=tk.CENTER, stretch=False)
         self.tree.column("delete", width=50, anchor=tk.CENTER, stretch=False)
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.tree.bind("<Double-1>", lambda _: self.toggle_selected())
@@ -325,6 +351,14 @@ class TodoApp(tk.Tk):
                                 foreground=palette["status_progress_fg"])
         self.tree.tag_configure("done", background=palette["status_done_bg"],
                                 foreground=palette["status_done_fg"])
+        
+        # Color tags for priorities
+        self.tree.tag_configure("priority_high", background=palette["priority_high_bg"],
+                                foreground=palette["priority_high_fg"])
+        self.tree.tag_configure("priority_medium", background=palette["priority_medium_bg"],
+                                foreground=palette["priority_medium_fg"])
+        self.tree.tag_configure("priority_low", background=palette["priority_low_bg"],
+                                foreground=palette["priority_low_fg"])
 
         scrollbar_y = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
         scrollbar_x = ttk.Scrollbar(tree_frame, orient=tk.HORIZONTAL, command=self.tree.xview)
@@ -350,24 +384,49 @@ class TodoApp(tk.Tk):
                    base_bg=palette["surface"]).pack(side=tk.LEFT)
 
     def _refresh_list(self) -> None:
-        """Re-renderiza o Treeview com base em `self.tasks` e atualiza o preview."""
+        """Re-renderiza o Treeview com base em `self.tasks` e atualiza o preview.
+        
+        Ordena as tarefas por prioridade (high > medium > low) e depois por ID.
+        """
+        # Sort tasks by priority (high=0, medium=1, low=2) and then by id
+        priority_order = {"high": 0, "medium": 1, "low": 2}
+        sorted_tasks = sorted(self.tasks, 
+                             key=lambda t: (priority_order.get(t.get("priority", "medium"), 1), t.get("id", 0)))
+        
         self.tree.delete(*self.tree.get_children())
-        for task in self.tasks:
+        for task in sorted_tasks:
             status_val = task.get("status", "pending")
+            priority_val = task.get("priority", "medium")
             task["done"] = status_val == "done"
 
             display = task["task"].strip() or "(sem título)"
+            
+            # Status label and tag
             if status_val == "pending":
                 status_label = "Pendente"
-                tags = ("pending",)
+                status_tag = "pending"
             elif status_val == "in_progress":
                 status_label = "Em andamento"
-                tags = ("in_progress",)
+                status_tag = "in_progress"
             else:
                 status_label = "Feita"
-                tags = ("done",)
-
-            self.tree.insert("", tk.END, iid=str(task["id"]), values=(display, status_label, "×"), tags=tags)
+                status_tag = "done"
+            
+            # Priority label and tag
+            if priority_val == "high":
+                priority_label = "Alta"
+                priority_tag = "priority_high"
+            elif priority_val == "medium":
+                priority_label = "Média"
+                priority_tag = "priority_medium"
+            else:
+                priority_label = "Baixa"
+                priority_tag = "priority_low"
+            
+            tags = (status_tag, priority_tag)
+            self.tree.insert("", tk.END, iid=str(task["id"]), 
+                           values=(display, priority_label, status_label, "×"), 
+                           tags=tags)
 
         # Update preview text with current selection
         self._update_preview()
@@ -380,7 +439,7 @@ class TodoApp(tk.Tk):
         region = self.tree.identify_region(event.x, event.y)
         if region == "cell":
             column = self.tree.identify_column(event.x)
-            if column == "#3":  # Coluna delete (task=#1, status=#2, delete=#3)
+            if column == "#4":  # Coluna delete (task=#1, priority=#2, status=#3, delete=#4)
                 item = self.tree.identify_row(event.y)
                 if item:
                     task_id = int(item)
@@ -410,12 +469,19 @@ class TodoApp(tk.Tk):
         self.preview.config(state="disabled")
 
     def add_task(self) -> None:
-        """Cria uma nova tarefa com status `pending` usando o texto do campo de entrada."""
+        """Cria uma nova tarefa com status `pending` e prioridade selecionada usando o texto do campo de entrada."""
         text = self.entry.get().strip()
         if not text:
             messagebox.showinfo("Aviso", "Digite uma tarefa antes de adicionar.")
             return
-        self.tasks.append({"id": self._next_id, "task": text, "done": False, "status": "pending"})
+        priority = self.priority_var.get()
+        self.tasks.append({
+            "id": self._next_id, 
+            "task": text, 
+            "done": False, 
+            "status": "pending",
+            "priority": priority
+        })
         self._next_id += 1
         save_tasks(self.tasks)
         self.entry.delete(0, tk.END)
