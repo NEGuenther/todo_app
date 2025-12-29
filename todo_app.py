@@ -131,6 +131,21 @@ def save_tasks(tasks: list[Task]) -> None:
 
 class TodoApp(tk.Tk):
     """Janela principal do aplicativo de tarefas."""
+    
+    # Dicionários de tradução para os filtros
+    STATUS_LABELS = {
+        "all": "Todos",
+        "pending": "Pendentes",
+        "in_progress": "Em andamento",
+        "done": "Concluídas"
+    }
+    
+    PRIORITY_LABELS = {
+        "all": "Todas",
+        "low": "Baixa",
+        "medium": "Média",
+        "high": "Alta"
+    }
 
     def __init__(self):
         """Inicializa janela, tema, carrega tarefas, constrói UI e renderiza lista."""
@@ -388,10 +403,16 @@ class TodoApp(tk.Tk):
         # Priority dropdown
         ttk.Label(top, text="Prioridade:", font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT, padx=(8, 0))
         self.priority_var = tk.StringVar(value="medium")
-        priority_combo = ttk.Combobox(top, textvariable=self.priority_var, 
-                                       values=["low", "medium", "high"],
-                                       state="readonly", width=8)
-        priority_combo.pack(side=tk.LEFT, padx=4)
+        priority_input_values = ["Baixa", "Média", "Alta"]
+        priority_input_combo = ttk.Combobox(top, values=priority_input_values,
+                                            state="readonly", width=8, font=("Segoe UI", 10))
+        priority_input_combo.set("Média")
+        priority_input_combo.pack(side=tk.LEFT, padx=4)
+        # Bind the combo to update priority variable
+        def on_priority_input_change(event):
+            label_to_key = {"Baixa": "low", "Média": "medium", "Alta": "high"}
+            self.priority_var.set(label_to_key.get(priority_input_combo.get(), "medium"))
+        priority_input_combo.bind("<<ComboboxSelected>>", on_priority_input_change)
         
         TodoButton(top, text="Adicionar", command=self.add_task, bg=palette["accent"], fg="white",
                    hover_bg=palette["accent_hover"], active_bg=palette["accent_active"],
@@ -447,19 +468,31 @@ class TodoApp(tk.Tk):
         ttk.Label(filter_frame, text="Status:", font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT)
         self.status_var = tk.StringVar(value="all")
         self.status_var.trace("w", lambda *args: self._apply_filters())
-        status_combo = ttk.Combobox(filter_frame, textvariable=self.status_var,
-                                    values=["all", "pending", "in_progress", "done"],
-                                    state="readonly", width=12, font=("Segoe UI", 10))
+        status_values = ["Todos", "Pendentes", "Em andamento", "Concluídas"]
+        status_combo = ttk.Combobox(filter_frame, values=status_values,
+                                    state="readonly", width=15, font=("Segoe UI", 10))
+        status_combo.set("Todos")
         status_combo.pack(side=tk.LEFT, padx=4)
+        # Bind the combo to update filter variable
+        def on_status_change(event):
+            label_to_key = {"Todos": "all", "Pendentes": "pending", "Em andamento": "in_progress", "Concluídas": "done"}
+            self.status_var.set(label_to_key.get(status_combo.get(), "all"))
+        status_combo.bind("<<ComboboxSelected>>", on_status_change)
         
         # Filtro por Prioridade
         ttk.Label(filter_frame, text="Prioridade:", font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT, padx=(16, 0))
         self.priority_filter_var = tk.StringVar(value="all")
         self.priority_filter_var.trace("w", lambda *args: self._apply_filters())
-        priority_combo = ttk.Combobox(filter_frame, textvariable=self.priority_filter_var,
-                                      values=["all", "low", "medium", "high"],
+        priority_values = ["Todas", "Alta", "Média", "Baixa"]
+        priority_combo = ttk.Combobox(filter_frame, values=priority_values,
                                       state="readonly", width=12, font=("Segoe UI", 10))
+        priority_combo.set("Todas")
         priority_combo.pack(side=tk.LEFT, padx=4)
+        # Bind the combo to update filter variable
+        def on_priority_change(event):
+            label_to_key = {"Todas": "all", "Alta": "high", "Média": "medium", "Baixa": "low"}
+            self.priority_filter_var.set(label_to_key.get(priority_combo.get(), "all"))
+        priority_combo.bind("<<ComboboxSelected>>", on_priority_change)
         
         # Label mostrando quantas tarefas correspondem
         self.label_filtered = ttk.Label(filter_frame, text="", font=("Segoe UI", 9), foreground=palette["fg_muted"])

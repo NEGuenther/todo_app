@@ -2,6 +2,8 @@
 
 Um gerenciador simples de tarefas (todo list) com interface gráfica em Tkinter e persistência de dados em JSON.
 
+**Idioma**: 100% em Português Brasileiro 🇧🇷
+
 ## Características
 
 - ✅ **Adicionar tarefas** - Use o campo de texto e pressione Enter para adicionar uma nova tarefa
