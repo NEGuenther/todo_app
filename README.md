@@ -23,6 +23,11 @@ Um gerenciador simples de tarefas (todo list) com interface gráfica em Tkinter 
   - Tarefas em andamento
   - Tarefas concluídas
   - Porcentagem de conclusão
+- 🔍 **Busca e Filtros** - Encontre tarefas rapidamente com:
+  - Campo de busca por texto (procura no título)
+  - Filtro por status (Todos, Pendentes, Em andamento, Concluídas)
+  - Filtro por prioridade (Todas, Alta, Média, Baixa)
+  - Mostra quantas tarefas correspondem aos filtros
 
 ## Como usar
 

@@ -70,6 +70,42 @@ def calculate_stats(tasks: list[Task]) -> dict[str, int | float]:
     }
 
 
+def filter_tasks(tasks: list[Task], status_filter: str | None, priority_filter: str | None, 
+                search_text: str) -> list[Task]:
+    """Filtra tarefas baseado em status, prioridade e texto de busca.
+    
+    Parâmetros:
+        tasks: Lista de tarefas a filtrar
+        status_filter: Status para filtrar (None = todos, "pending", "in_progress", "done")
+        priority_filter: Prioridade para filtrar (None = todas, "low", "medium", "high")
+        search_text: Texto para buscar no título da tarefa (case-insensitive)
+    
+    Retorna:
+        Lista de tarefas filtradas
+    """
+    result = []
+    search_lower = search_text.lower().strip()
+    
+    for task in tasks:
+        # Aplicar filtro de status
+        if status_filter and task.get("status") != status_filter:
+            continue
+        
+        # Aplicar filtro de prioridade
+        if priority_filter and task.get("priority") != priority_filter:
+            continue
+        
+        # Aplicar filtro de texto
+        if search_lower:
+            task_text = task.get("task", "").lower()
+            if search_lower not in task_text:
+                continue
+        
+        result.append(task)
+    
+    return result
+
+
 def load_tasks() -> list[Task]:
     """Carrega tarefas do arquivo JSON.
 
@@ -100,7 +136,7 @@ class TodoApp(tk.Tk):
         """Inicializa janela, tema, carrega tarefas, constrói UI e renderiza lista."""
         super().__init__()
         self.title("📝 Minhas Tarefas")
-        self.geometry("900x750")
+        self.geometry("1050x800")
         self.resizable(False, False)
 
         self._apply_theme()
@@ -109,6 +145,11 @@ class TodoApp(tk.Tk):
         self._next_id = max([t.get("id", 0) for t in self.tasks], default=0) + 1
 
         self._normalize_tasks()
+        
+        # Filter variables
+        self.filter_status = None  # None = all, "pending", "in_progress", "done"
+        self.filter_priority = None  # None = all, "low", "medium", "high"
+        self.filter_search = ""  # Search text
 
         self._build_ui()
         self._refresh_list()
@@ -388,6 +429,42 @@ class TodoApp(tk.Tk):
         self.label_completion = ttk.Label(dashboard, text="Progresso: 0%", font=("Segoe UI", 11, "bold"), foreground=palette["accent"])
         self.label_completion.pack(side=tk.LEFT, padx=8)
 
+        # Filtros e Busca
+        filter_frame = ttk.Frame(main)
+        filter_frame.pack(fill=tk.X, pady=(0, 12))
+        
+        # Busca por texto
+        ttk.Label(filter_frame, text="🔍 Buscar:", font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT)
+        self.search_var = tk.StringVar()
+        self.search_var.trace("w", lambda *args: self._apply_filters())
+        search_entry = ttk.Entry(filter_frame, textvariable=self.search_var, font=("Segoe UI", 10), width=20)
+        search_entry.pack(side=tk.LEFT, padx=8)
+        
+        # Separador
+        ttk.Label(filter_frame, text="│", foreground=palette["fg_muted"]).pack(side=tk.LEFT, padx=8)
+        
+        # Filtro por Status
+        ttk.Label(filter_frame, text="Status:", font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT)
+        self.status_var = tk.StringVar(value="all")
+        self.status_var.trace("w", lambda *args: self._apply_filters())
+        status_combo = ttk.Combobox(filter_frame, textvariable=self.status_var,
+                                    values=["all", "pending", "in_progress", "done"],
+                                    state="readonly", width=12, font=("Segoe UI", 10))
+        status_combo.pack(side=tk.LEFT, padx=4)
+        
+        # Filtro por Prioridade
+        ttk.Label(filter_frame, text="Prioridade:", font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT, padx=(16, 0))
+        self.priority_filter_var = tk.StringVar(value="all")
+        self.priority_filter_var.trace("w", lambda *args: self._apply_filters())
+        priority_combo = ttk.Combobox(filter_frame, textvariable=self.priority_filter_var,
+                                      values=["all", "low", "medium", "high"],
+                                      state="readonly", width=12, font=("Segoe UI", 10))
+        priority_combo.pack(side=tk.LEFT, padx=4)
+        
+        # Label mostrando quantas tarefas correspondem
+        self.label_filtered = ttk.Label(filter_frame, text="", font=("Segoe UI", 9), foreground=palette["fg_muted"])
+        self.label_filtered.pack(side=tk.LEFT, padx=16)
+
         # Lista de tarefas
         columns = ("task", "priority", "status", "delete")
         tree_frame = ttk.Frame(main)
@@ -450,10 +527,18 @@ class TodoApp(tk.Tk):
         """Re-renderiza o Treeview com base em `self.tasks` e atualiza o preview.
         
         Ordena as tarefas por prioridade (high > medium > low) e depois por ID.
+        Aplica os filtros de status, prioridade e busca.
         """
+        # Apply filters
+        status_filter = self.filter_status
+        priority_filter = self.filter_priority
+        search_text = self.filter_search
+        
+        filtered_tasks = filter_tasks(self.tasks, status_filter, priority_filter, search_text)
+        
         # Sort tasks by priority (high=0, medium=1, low=2) and then by id
         priority_order = {"high": 0, "medium": 1, "low": 2}
-        sorted_tasks = sorted(self.tasks, 
+        sorted_tasks = sorted(filtered_tasks, 
                              key=lambda t: (priority_order.get(t.get("priority", "medium"), 1), t.get("id", 0)))
         
         self.tree.delete(*self.tree.get_children())
@@ -496,6 +581,9 @@ class TodoApp(tk.Tk):
         
         # Update dashboard statistics
         self._update_dashboard()
+        
+        # Update filter result count
+        self._update_filter_label(len(sorted_tasks))
 
     def _on_tree_click(self, event: tk.Event) -> None:
         """Handler de clique no Treeview.
@@ -545,7 +633,29 @@ class TodoApp(tk.Tk):
         
         completion_pct = int(stats['completion_percent'])
         self.label_completion.config(text=f"Progresso: {completion_pct}%")
-        self.preview.config(state="disabled")
+
+    def _apply_filters(self) -> None:
+        """Aplica os filtros baseado nas seleções do usuário."""
+        # Update filter variables from UI
+        search_text = self.search_var.get()
+        status_val = self.status_var.get()
+        priority_val = self.priority_filter_var.get()
+        
+        # Convert "all" to None
+        self.filter_search = search_text
+        self.filter_status = None if status_val == "all" else status_val
+        self.filter_priority = None if priority_val == "all" else priority_val
+        
+        # Refresh the list
+        self._refresh_list()
+
+    def _update_filter_label(self, count: int) -> None:
+        """Atualiza o label mostrando quantas tarefas correspondem aos filtros."""
+        total = len(self.tasks)
+        if count == total:
+            self.label_filtered.config(text="")
+        else:
+            self.label_filtered.config(text=f"({count} de {total} tarefas)")
 
     def add_task(self) -> None:
         """Cria uma nova tarefa com status `pending` e prioridade selecionada usando o texto do campo de entrada."""
